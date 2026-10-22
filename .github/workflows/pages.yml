@@ -41,15 +41,19 @@ jobs:
           # payflow-backend to get lists and revenue history. Left empty, the
           # app reads contract state directly and still works.
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-      # Stop Pages running the output through Jekyll, which drops _next/.
-      - run: touch out/.nojekyll
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Run Playwright smoke tests
-        run: |
-          npx serve out -l 3000 & 
-          npx wait-on http://localhost:3000/payflow-frontend/
-          npm run test:e2e
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      # Stop Pages running the output through Jekyll, which drops _next/.
+      - run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
@@ -61,5 +65,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
       - id: deployment
         uses: actions/deploy-pages@v4

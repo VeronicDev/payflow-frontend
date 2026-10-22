@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/soroban-testnet.stellar.org/**', async (route) => {
+  await page.route('https://soroban-testnet.stellar.org/**', async route => {
     const postData = route.request().postDataJSON();
     if (postData && postData.method === 'getLedgerEntries') {
       await route.fulfill({
@@ -27,7 +27,7 @@ test.beforeEach(async ({ page }) => {
           id: postData.id,
           result: {
             results: [{
-              xdr: 'AAAAAQAAAAAAAAAA',
+              xdr: 'AAAAAQ=='
             }],
             latestLedger: 100
           }
@@ -41,60 +41,31 @@ test.beforeEach(async ({ page }) => {
       body: JSON.stringify({
         jsonrpc: '2.0',
         id: postData?.id || 1,
-        result: { latestLedger: 100 }
+        result: {}
       }),
     });
   });
 });
 
-test('smoke test: home page loads and displays heading', async ({ page }) => {
+test('smoke test static site export routes', async ({ page }) => {
   const errors: string[] = [];
-  page.on('console', (msg) => {
+  page.on('console', msg => {
     if (msg.type() === 'error') {
       errors.push(msg.text());
     }
   });
 
   await page.goto('/');
-  await expect(page.locator('h1').first()).toBeVisible();
-  expect(errors).toEqual([]);
-});
-
-test('smoke test: dashboard route loads', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
-      errors.push(msg.text());
-    }
-  });
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   await page.goto('/dashboard');
-  await expect(page.locator('h1').first()).toBeVisible();
-  expect(errors).toEqual([]);
-});
+  await expect(page.getByRole('heading')).toBeVisible();
 
-test('smoke test: merchant route loads', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
-      errors.push(msg.text());
-    }
-  });
+  await page.goto('/send');
+  await expect(page.getByRole('heading')).toBeVisible();
 
-  await page.goto('/merchant');
-  await expect(page.locator('h1').first()).toBeVisible();
-  expect(errors).toEqual([]);
-});
+  await page.goto('/history');
+  await expect(page.getByRole('heading')).toBeVisible();
 
-test('smoke test: streaming route loads', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
-      errors.push(msg.text());
-    }
-  });
-
-  await page.goto('/streaming');
-  await expect(page.locator('h1').first()).toBeVisible();
-  expect(errors).toEqual([]);
+  expect(errors).toHaveLength(0);
 });
