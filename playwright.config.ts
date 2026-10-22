@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
@@ -6,14 +6,21 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'list',
+  reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3000/payflow-frontend',
     trace: 'on-first-retry',
   },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
   webServer: {
-    command: 'npx serve out -l 3000',
-    url: 'http://localhost:3000/payflow-frontend/',
+    command: 'npx serve out -l 3000 --single',
+    url: 'http://localhost:3000/payflow-frontend',
     reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
   },
 });

@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  // Intercept Soroban RPC calls to simulate contract responses without live network
   await page.route('**/soroban-testnet.stellar.org/**', async (route) => {
     const postData = route.request().postDataJSON();
     if (postData && postData.method === 'getLedgerEntries') {
@@ -10,10 +9,10 @@ test.beforeEach(async ({ page }) => {
         contentType: 'application/json',
         body: JSON.stringify({
           jsonrpc: '2.0',
-          id: postData.id || 1,
+          id: postData.id,
           result: {
             entries: [],
-            latestLedger: 123456
+            latestLedger: 100
           }
         }),
       });
@@ -25,13 +24,12 @@ test.beforeEach(async ({ page }) => {
         contentType: 'application/json',
         body: JSON.stringify({
           jsonrpc: '2.0',
-          id: postData.id || 1,
+          id: postData.id,
           result: {
             results: [{
-              xdr: 'AAAA==',
-              auth: []
+              xdr: 'AAAAAQAAAAAAAAAA',
             }],
-            latestLedger: 123456
+            latestLedger: 100
           }
         }),
       });
@@ -43,32 +41,60 @@ test.beforeEach(async ({ page }) => {
       body: JSON.stringify({
         jsonrpc: '2.0',
         id: postData?.id || 1,
-        result: {}
+        result: { latestLedger: 100 }
       }),
     });
   });
 });
 
-test('smoke test static export routes, headings and no console errors', async ({ page }) => {
-  const consoleErrors: string[] = [];
+test('smoke test: home page loads and displays heading', async ({ page }) => {
+  const errors: string[] = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') {
-      consoleErrors.push(msg.text());
+      errors.push(msg.text());
     }
   });
 
-  // Test home route
-  await page.goto('/payflow-frontend/');
+  await page.goto('/');
   await expect(page.locator('h1').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
 
-  // Test dashboard route
-  await page.goto('/payflow-frontend/dashboard');
+test('smoke test: dashboard route loads', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      errors.push(msg.text());
+    }
+  });
+
+  await page.goto('/dashboard');
   await expect(page.locator('h1').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
 
-  // Test merchant route
-  await page.goto('/payflow-frontend/merchant');
+test('smoke test: merchant route loads', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      errors.push(msg.text());
+    }
+  });
+
+  await page.goto('/merchant');
   await expect(page.locator('h1').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
 
-  // Ensure no unhandled console error messages occurred
-  expect(consoleErrors).toEqual([]);
+test('smoke test: streaming route loads', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      errors.push(msg.text());
+    }
+  });
+
+  await page.goto('/streaming');
+  await expect(page.locator('h1').first()).toBeVisible();
+  expect(errors).toEqual([]);
 });
